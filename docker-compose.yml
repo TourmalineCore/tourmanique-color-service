@@ -4,7 +4,7 @@ services:
   run-model-locally:
     container_name: colors-model-local-starter
     restart: "no"
-    image: tianon/true
+    image: tianon/true:multiarch
     depends_on:
       - colors-model
 
@@ -13,14 +13,44 @@ services:
     build:
       context: .
     image: colors-model:latest
+    command: poetry run flask run
     restart: unless-stopped
     volumes:
       - .:/app-workspace
     env_file:
       - .env
     networks:
-      - tourmanique-api-private_tourmanique-net
+      - tourmanique-api_tourmanique-net
+      - internal
+    depends_on: 
+      - colors-model-postgres
+    ports:
+      - "7522:5000"
+
+  colors-model-postgres:
+    container_name: colors-model-postgres
+    image: postgres:13.3-alpine
+    restart: always
+    volumes:
+      - colors-model-postgres-data:/var/lib/postgresql/data/
+    healthcheck:
+      test: "pg_isready -U $$POSTGRES_USER"
+      timeout: 10s
+      interval: 10s
+      retries: 3
+    networks:
+      - tourmanique-api_tourmanique-net
+      - internal
+    env_file:
+      - .env
+    ports:
+      - "7520:5432"
 
 networks:
-  tourmanique-api-private_tourmanique-net:
+  internal: {}
+  tourmanique-api_tourmanique-net:
     external: true
+
+
+volumes:
+  colors-model-postgres-data:
