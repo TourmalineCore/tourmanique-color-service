@@ -4,6 +4,7 @@ import warnings
 from sqlalchemy import create_engine
 from sqlalchemy import event
 from sqlalchemy import exc
+from sqlalchemy_utils import database_exists, create_database
 
 from config.postgres_config import postgres_username, postgres_password, postgres_host, postgres_database, postgres_port
 
@@ -47,6 +48,8 @@ class DBEngineProvider:
             isolation_level='READ COMMITTED',
             pool_pre_ping=True,
         )
+        if not database_exists(self.connection_string):
+            create_database(self.connection_string)
 
     def build_connection_string(
             self,
